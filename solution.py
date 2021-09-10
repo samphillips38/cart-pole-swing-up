@@ -1,6 +1,7 @@
 # This is the solution to the cart-pole swing-up problem
 
 import numpy as np
+from scipy import optimize
 
 # System global paramters
 m1 = 10
@@ -13,6 +14,7 @@ d = 1
 d_max = 3
 u_max = 10
 T = 10
+N = 1000
 
 
 # Dynamics
@@ -36,3 +38,15 @@ def trapezoid_integral(time_array, func):
 
         s += h_k*(w_k + w_kplus1) / 2
     return s
+
+def objective_func(data):
+    """Calculate the value of the objective function with given data"""
+    u = data[0]
+    h_k = T/N
+    s = 0
+    for k in range(len(u) - 1):
+        s += u[k]**2 + u[k+1]**2
+    return 0.5*h_k*s
+
+if __name__=='__main__':
+    pass
