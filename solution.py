@@ -4,23 +4,23 @@ import numpy as np
 from scipy import optimize
 
 # System global paramters
-m1 = 10
-m2 = 10
-l = 10
+m1 = 1
+m2 = 1
+l = 0.5
 g = 9.81
 
 # Problem global parameters
 d = 1
 d_max = 3
-u_max = 10
+u_max = 100
 T = 10
-N = 1000
+N = 100
 
 
 # Dynamics
-def f(x, u):
+def f(u, x):
     """Calculate the dynamics given the state, x and the control, u"""
-    [_, q2, q1_dot, q2_dot] = x # [horzontal_position, angle, ...]
+    [_, q2, q1_dot, q2_dot] = x.tolist() # [horzontal_position, angle, ...]
 
     q1_ddot = (l*m1*np.sin(q2)*q2_dot**2 + u + m2*g*np.cos(q2)*np.sin(q2)) / (m1 + m2*(1 - np.cos(q2)**2))
     q2_ddot = (l*m2*np.cos(q2)*np.sin(q2)*q2_dot**2 + u*np.cos(q2) + (m1 + m2)*g*np.sin(q2)) / (l*m1 + l*m2*(1 - np.cos(q2)**2))
@@ -31,7 +31,7 @@ def f(x, u):
 def trapezoid_integral(time_array, func):
     """Using given discrete time array and function, approximate the integral with the trapezoid quadrature"""
     s = 0
-    for k in range(len(time_array)-1):
+    for k in range(N-1):
         h_k = time_array[k+1] - time_array[k]
         w_k = func(time_array[k])
         w_kplus1 = func(time_array[k+1])
@@ -39,22 +39,31 @@ def trapezoid_integral(time_array, func):
         s += h_k*(w_k + w_kplus1) / 2
     return s
 
+def split_data(data) -> np.array:
+    u = data[:N]
+
+    q1 = data[N:2*N]
+    q2 = data[2*N:3*N]
+    q1_dot = data[3*N:4*N]
+    q2_dot = data[4*N:5*N]
+
+    return (u, np.array([q1, q2, q1_dot, q2_dot]))
+
 def objective_func(data):
     """Calculate the value of the objective function with given data"""
-    u = data[0]
+    u, _ = split_data(data)
     h_k = T/N
     s = 0
-    for k in range(len(u) - 1):
+    for k in range(N-1):
         s += u[k]**2 + u[k+1]**2
     return 0.5*h_k*s
 
 def collocation_constraint(data):
     """Constructs a matrix which should be constrained to be equal to 0. This is the dynamics constraint"""
-    u = data[0]
-    x = data[1:]
+    u, x = split_data(data)
     h_k = T/N
     output = np.zeros((5, N))
-    for k in range(len(data) - 1):
+    for k in range(N-1):
         x_k = x[:, k] # Structured like [q1, q2, qdot1, qdot2]
         x_kplus1 = x[:, k+1]
         u_k = u[k]
@@ -62,8 +71,7 @@ def collocation_constraint(data):
 
         # Insert Column into output matrix
         output[1:, k] = h_k * (f(u_kplus1, x_kplus1) + f(u_k, x_k)) - x_kplus1 + x_k 
-    
-    return output
+    return output.flatten() 
 
 def path_limit(sign=1):
     """Construct the upper limit to the path constraint.
@@ -72,18 +80,49 @@ def path_limit(sign=1):
     output = np.full((5, N), np.inf)
     output[0] = u_max
     output[1] = d_max
-    return output*sign
+    return output.flatten()*sign
 
 def boundary_start(data):
     """Function to constrain start at origin"""
-    x_0 = data[1:, 0]
+    _, x = split_data(data)
+    x_0 = x[:, 0]
     return x_0
 
 def boundary_end(data):
     """Function to constrain end point"""
-    x_N = data[1:, N]
+    _, x = split_data(data)
+    x_N = x[:, N-1]
     end = np.array([d, np.pi, 0, 0]) # End vertically with 0 velocity
     return x_N - end
 
+def initial_guess() -> np.ndarray:
+    """Linearly interpolate between start and end states for initial guess"""
+    output = np.zeros((5, N))
+    q1 = np.linspace(0, d, N)
+    q2 = np.linspace(0, np.pi, N)
+    output[1] = q1
+    output[2] = q2
+    return output.flatten()
+
+def solve():
+
+    # Define bounds
+    bounds = optimize.Bounds(path_limit(sign=-1), path_limit())
+
+    # Define Constraints
+    dynamic_con = optimize.NonlinearConstraint(collocation_constraint, np.zeros(5*N), np.zeros(5*N))
+    boundary_start_con = optimize.NonlinearConstraint(boundary_start, np.zeros(4), np.zeros(4))
+    boundary_end_con = optimize.NonlinearConstraint(boundary_end, np.zeros(4), np.zeros(4))
+
+    # Initial guess
+    start = initial_guess()
+
+    # Optimise
+    res = optimize.minimize(objective_func, start, constraints=[dynamic_con, boundary_start_con, boundary_end_con], bounds=bounds)
+    return res
+
+
 if __name__=='__main__':
+    # print(initial_guess())
+    print(solve())
     pass
