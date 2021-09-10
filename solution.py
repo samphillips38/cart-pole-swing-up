@@ -65,7 +65,6 @@ def collocation_constraint(data):
     
     return output
 
-
 def path_limit(sign=1):
     """Construct the upper limit to the path constraint.
     If sign = -1 output lower limit.
@@ -75,6 +74,16 @@ def path_limit(sign=1):
     output[1] = d_max
     return output*sign
 
+def boundary_start(data):
+    """Function to constrain start at origin"""
+    x_0 = data[1:, 0]
+    return x_0
+
+def boundary_end(data):
+    """Function to constrain end point"""
+    x_N = data[1:, N]
+    end = np.array([d, np.pi, 0, 0]) # End vertically with 0 velocity
+    return x_N - end
 
 if __name__=='__main__':
     pass
