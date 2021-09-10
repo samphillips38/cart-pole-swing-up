@@ -26,7 +26,7 @@ def x_dot(x, u):
     return np.array([q1_dot, q2_dot, q1_ddot, q2_ddot])
 
 
-def trapezoid_quadrature(time_array, func):
+def trapezoid_integral(time_array, func):
     """Using given discrete time array and function, approximate the integral with the trapezoid quadrature"""
     s = 0
     for k in range(len(time_array)-1):
