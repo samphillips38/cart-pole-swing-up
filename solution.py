@@ -2,11 +2,18 @@
 
 import numpy as np
 
-# Problem global paramters
+# System global paramters
 m1 = 10
 m2 = 10
 l = 10
 g = 9.81
+
+# Problem global parameters
+d = 1
+d_max = 3
+u_max = 10
+T = 10
+
 
 # Dynamics
 def x_dot(x, u):
