@@ -18,7 +18,7 @@ N = 1000
 
 
 # Dynamics
-def x_dot(x, u):
+def f(x, u):
     """Calculate the dynamics given the state, x and the control, u"""
     [_, q2, q1_dot, q2_dot] = x # [horzontal_position, angle, ...]
 
@@ -47,6 +47,34 @@ def objective_func(data):
     for k in range(len(u) - 1):
         s += u[k]**2 + u[k+1]**2
     return 0.5*h_k*s
+
+def collocation_constraint(data):
+    """Constructs a matrix which should be constrained to be equal to 0. This is the dynamics constraint"""
+    u = data[0]
+    x = data[1:]
+    h_k = T/N
+    output = np.zeros((5, N))
+    for k in range(len(data) - 1):
+        x_k = x[:, k] # Structured like [q1, q2, qdot1, qdot2]
+        x_kplus1 = x[:, k+1]
+        u_k = u[k]
+        u_kplus1 = u[k+1]
+
+        # Insert Column into output matrix
+        output[1:, k] = h_k * (f(u_kplus1, x_kplus1) + f(u_k, x_k)) - x_kplus1 + x_k 
+    
+    return output
+
+
+def path_limit(sign=1):
+    """Construct the upper limit to the path constraint.
+    If sign = -1 output lower limit.
+    """
+    output = np.full((5, N), np.inf)
+    output[0] = u_max
+    output[1] = d_max
+    return output*sign
+
 
 if __name__=='__main__':
     pass
