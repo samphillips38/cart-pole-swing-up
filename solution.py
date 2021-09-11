@@ -2,6 +2,7 @@
 
 import numpy as np
 from scipy import optimize
+import matplotlib.pyplot as plt
 
 # System global paramters
 m1 = 1
@@ -10,34 +11,22 @@ l = 0.5
 g = 9.81
 
 # Problem global parameters
-d = 1
-d_max = 3
-u_max = 100
+d = 3
+d_max = 10
+u_max = 10
 T = 10
-N = 100
+N = 10
 
 
 # Dynamics
 def f(u, x):
     """Calculate the dynamics given the state, x and the control, u"""
-    [_, q2, q1_dot, q2_dot] = x.tolist() # [horzontal_position, angle, ...]
+    [_, q2, q1_dot, q2_dot] = x # [horzontal_position, angle, ...]
 
-    q1_ddot = (l*m1*np.sin(q2)*q2_dot**2 + u + m2*g*np.cos(q2)*np.sin(q2)) / (m1 + m2*(1 - np.cos(q2)**2))
+    q1_ddot = (l*m2*np.sin(q2)*q2_dot**2 + u + m2*g*np.cos(q2)*np.sin(q2)) / (m1 + m2*(1 - np.cos(q2)**2))
     q2_ddot = (l*m2*np.cos(q2)*np.sin(q2)*q2_dot**2 + u*np.cos(q2) + (m1 + m2)*g*np.sin(q2)) / (l*m1 + l*m2*(1 - np.cos(q2)**2))
 
     return np.array([q1_dot, q2_dot, q1_ddot, q2_ddot])
-
-
-def trapezoid_integral(time_array, func):
-    """Using given discrete time array and function, approximate the integral with the trapezoid quadrature"""
-    s = 0
-    for k in range(N-1):
-        h_k = time_array[k+1] - time_array[k]
-        w_k = func(time_array[k])
-        w_kplus1 = func(time_array[k+1])
-
-        s += h_k*(w_k + w_kplus1) / 2
-    return s
 
 def split_data(data) -> np.array:
     u = data[:N]
@@ -62,7 +51,7 @@ def collocation_constraint(data):
     """Constructs a matrix which should be constrained to be equal to 0. This is the dynamics constraint"""
     u, x = split_data(data)
     h_k = T/N
-    output = np.zeros((5, N))
+    output = np.zeros((4, N-1))
     for k in range(N-1):
         x_k = x[:, k] # Structured like [q1, q2, qdot1, qdot2]
         x_kplus1 = x[:, k+1]
@@ -70,7 +59,7 @@ def collocation_constraint(data):
         u_kplus1 = u[k+1]
 
         # Insert Column into output matrix
-        output[1:, k] = h_k * (f(u_kplus1, x_kplus1) + f(u_k, x_k)) - x_kplus1 + x_k 
+        output[:, k] = h_k * (f(u_kplus1, x_kplus1) + f(u_k, x_k)) - x_kplus1 + x_k
     return output.flatten() 
 
 def path_limit(sign=1):
@@ -110,7 +99,7 @@ def solve():
     bounds = optimize.Bounds(path_limit(sign=-1), path_limit())
 
     # Define Constraints
-    dynamic_con = optimize.NonlinearConstraint(collocation_constraint, np.zeros(5*N), np.zeros(5*N))
+    dynamic_con = optimize.NonlinearConstraint(collocation_constraint, np.zeros(4*(N-1)), np.zeros(4*(N-1)))
     boundary_start_con = optimize.NonlinearConstraint(boundary_start, np.zeros(4), np.zeros(4))
     boundary_end_con = optimize.NonlinearConstraint(boundary_end, np.zeros(4), np.zeros(4))
 
@@ -118,11 +107,20 @@ def solve():
     start = initial_guess()
 
     # Optimise
-    res = optimize.minimize(objective_func, start, constraints=[dynamic_con, boundary_start_con, boundary_end_con], bounds=bounds)
+    res = optimize.minimize(objective_func, start, method='SLSQP', constraints=[dynamic_con, boundary_start_con, boundary_end_con], bounds=bounds)
     return res
 
 
 if __name__=='__main__':
-    # print(initial_guess())
-    print(solve())
+    res = solve().x
+    u, x = split_data(res)
+
+    [q1, q2, q1_dot, q2_dot] = x
+
+    y = -l*np.cos(q2)
+    x = q1 + l*np.sin(q2)
+
+    plt.plot(x, y, label='Swing Position')
+    plt.legend()
+    plt.show()
     pass
