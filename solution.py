@@ -51,15 +51,14 @@ def collocation_constraint(data):
     """Constructs a matrix which should be constrained to be equal to 0. This is the dynamics constraint"""
     u, x = split_data(data)
     h_k = T/N
-    output = np.zeros((4, N-1))
-    for k in range(N-1):
-        x_k = x[:, k] # Structured like [q1, q2, qdot1, qdot2]
-        x_kplus1 = x[:, k+1]
-        u_k = u[k]
-        u_kplus1 = u[k+1]
 
-        # Insert Column into output matrix
-        output[:, k] = h_k * (f(u_kplus1, x_kplus1) + f(u_k, x_k)) - x_kplus1 + x_k
+    x_k = np.delete(x, N-1, 1) # Size is (4, N-1)
+    u_k = np.delete(u, N-1)
+
+    x_kplus1 = np.delete(x, 0, 1)
+    u_kplus1 = np.delete(u, 0)
+
+    output = h_k * (f(u_kplus1, x_kplus1) + f(u_k, x_k)) - x_kplus1 + x_k
     return output.flatten() 
 
 def path_limit(sign=1):
@@ -109,7 +108,6 @@ def solve():
     # Optimise
     res = optimize.minimize(objective_func, start, method='SLSQP', constraints=[dynamic_con, boundary_start_con, boundary_end_con], bounds=bounds)
     return res
-
 
 if __name__=='__main__':
     res = solve().x
