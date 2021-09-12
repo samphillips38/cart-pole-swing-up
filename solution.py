@@ -1,8 +1,15 @@
 # This is the solution to the cart-pole swing-up problem
 
+from operator import mod
 import numpy as np
+from pandas.core import frame
+from pandas.core.algorithms import mode
 from scipy import optimize
 import matplotlib.pyplot as plt
+import matplotlib.animation as manimation
+import plotly.express as px
+import plotly.graph_objects as go
+import pandas as pd
 
 # System global paramters
 m1 = 1
@@ -11,11 +18,11 @@ l = 0.5
 g = 9.81
 
 # Problem global parameters
-d = 3
-d_max = 10
-u_max = 10
-T = 10
-N = 10
+d = 1.5
+d_max = 5
+u_max = 100
+T = 1
+N = 100
 
 
 # Dynamics
@@ -109,16 +116,73 @@ def solve():
     res = optimize.minimize(objective_func, start, method='SLSQP', constraints=[dynamic_con, boundary_start_con, boundary_end_con], bounds=bounds)
     return res
 
-if __name__=='__main__':
-    res = solve().x
-    u, x = split_data(res)
+def display_result(result):
 
+    u, x = split_data(result)
     [q1, q2, q1_dot, q2_dot] = x
 
-    y = -l*np.cos(q2)
-    x = q1 + l*np.sin(q2)
+    mass_y = -l*np.cos(q2)
+    mass_x = q1 + l*np.sin(q2)
 
-    plt.plot(x, y, label='Swing Position')
+    plt.plot(mass_x, mass_y, label='Swing Position')    
     plt.legend()
     plt.show()
+
+def plot_result1(result):
+    u, x = split_data(result)
+    [q1, q2, q1_dot, q2_dot] = x
+    mass_y = -l*np.cos(q2)
+    mass_x = q1 + l*np.sin(q2)
+    t = np.linspace(0, T, N)
+
+    df = pd.DataFrame({
+        'Time': t,
+        'u': u,
+        'q1': q1,
+        'q2': q1,
+        'q1 Dot': q2_dot,
+        'q2 Dot': q1_dot,
+        'Mass Y':mass_y,
+        'Mass X': mass_x
+    })
+
+
+    layout = go.Layout(
+        xaxis=dict(range=[-d_max, d_max], autorange=False),
+        yaxis=dict(range=[-d_max/2, d_max/2], autorange=False),
+        title="Start Title",
+        updatemenus=[dict(
+            type="buttons",
+            buttons=[dict(label="Play",
+                          method="animate",
+                          args=[None, {'frame': {'duration': 1000*T/N}}])])]
+    )
+    data = [
+        go.Scatter(x=df['Mass X'], y=df['Mass Y'], mode='lines'),
+        go.Scatter(x=df['Mass X'], y=df['Mass Y'], mode='lines')
+    ]
+    frames = []
+    for k in range(N):
+        rect_xm = q1[k] - 0.5
+        rect_xM = q1[k] + 0.5
+        frames.append(go.Frame(
+            data=[
+                go.Scatter(x=[df['Mass X'][k]], y=[df['Mass Y'][k]], mode='markers'), # Point mass
+                go.Scatter(x=[rect_xm, rect_xm, rect_xM, rect_xM, rect_xm, None, q1[k], mass_x[k]], y=[-0.2, 0.2, 0.2, -0.2, -0.2, None, 0, mass_y[k]], fill="toself"), # Cart
+                # go.Scatter(x=[q1[k], mass_x[k]], y=[0, mass_y[k]], mode='lines'), # Arm
+                go.Scatter(x=df['Mass X'], y=df['Mass Y'], mode='lines')
+            ]
+        ))
+
+    fig = go.Figure(
+        data=data,
+        layout=layout,
+        frames=frames
+    )
+    fig.show()
+
+
+if __name__=='__main__':
+    res = solve().x
+    plot_result1(res)
     pass
