@@ -1,28 +1,24 @@
 # This is the solution to the cart-pole swing-up problem
-
-from operator import mod
 import numpy as np
-from pandas.core import frame
 from pandas.core.algorithms import mode
 from scipy import optimize
 import matplotlib.pyplot as plt
-import matplotlib.animation as manimation
-import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
+import pycollo as pc
 
 # System global paramters
-m1 = 1
-m2 = 1
-l = 0.5
-g = 9.81
+m1 = 10
+m2 = 10
+l = 1
+g = -9.81
 
 # Problem global parameters
 d = 1.5
 d_max = 5
 u_max = 100
-T = 1
-N = 100
+T = 8
+N = 80
 
 
 # Dynamics
@@ -65,7 +61,7 @@ def collocation_constraint(data):
     x_kplus1 = np.delete(x, 0, 1)
     u_kplus1 = np.delete(u, 0)
 
-    output = h_k * (f(u_kplus1, x_kplus1) + f(u_k, x_k)) - x_kplus1 + x_k
+    output = 0.5 * h_k * (f(u_kplus1, x_kplus1) + f(u_k, x_k)) - x_kplus1 + x_k
     return output.flatten() 
 
 def path_limit(sign=1):
@@ -128,7 +124,7 @@ def display_result(result):
     plt.legend()
     plt.show()
 
-def plot_result1(result):
+def plot_result(result):
     u, x = split_data(result)
     [q1, q2, q1_dot, q2_dot] = x
     mass_y = -l*np.cos(q2)
@@ -162,15 +158,16 @@ def plot_result1(result):
         go.Scatter(x=df['Mass X'], y=df['Mass Y'], mode='lines')
     ]
     frames = []
-    for k in range(N):
+    for i in range(N):
+        k = N - i - 1
         rect_xm = q1[k] - 0.5
         rect_xM = q1[k] + 0.5
         frames.append(go.Frame(
             data=[
                 go.Scatter(x=[df['Mass X'][k]], y=[df['Mass Y'][k]], mode='markers'), # Point mass
                 go.Scatter(x=[rect_xm, rect_xm, rect_xM, rect_xM, rect_xm, None, q1[k], mass_x[k]], y=[-0.2, 0.2, 0.2, -0.2, -0.2, None, 0, mass_y[k]], fill="toself"), # Cart
-                # go.Scatter(x=[q1[k], mass_x[k]], y=[0, mass_y[k]], mode='lines'), # Arm
-                go.Scatter(x=df['Mass X'], y=df['Mass Y'], mode='lines')
+                go.Scatter(x=df['Mass X'], y=df['Mass Y'], mode='lines'),
+                go.Scatter(x=mass_x[:k], y=mass_y[:k], mode='markers')
             ]
         ))
 
@@ -184,5 +181,4 @@ def plot_result1(result):
 
 if __name__=='__main__':
     res = solve().x
-    plot_result1(res)
-    pass
+    plot_result(res)
