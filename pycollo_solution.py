@@ -2,6 +2,7 @@ import pycollo as pc
 import sympy as sym
 import numpy as np
 from solution import plot_result
+import matplotlib as plt
 
 
 # System global paramters
@@ -37,6 +38,7 @@ def setup_problem() -> pc.OptimalControlProblem:
     phase.bounds.initial_time = 0
     phase.bounds.final_time = T
     phase.bounds.control_variables = {u: [-u_max, u_max]}
+    phase.bounds.integral_variables = [[0, 100]]
     phase.bounds.state_variables = {
         q1: [-d_max, d_max]
     }
@@ -86,6 +88,17 @@ def solve():
     control_solution = prob.solution.control[0][0]
 
     print(control_solution)
+
+    plt.subplot(3, 1, 1)
+    plt.plot(time_solution, position_solution, marker="x", color="tab:blue")
+
+    plt.subplot(3, 1, 2)
+    plt.plot(time_solution, angle_solution, marker="x", color="tab:blue")
+
+    plt.subplot(3, 1, 3)
+    plt.plot(time_solution, control_solution, marker="x", color="tab:blue")
+
+    plt.show()
 
 if __name__=='__main__':
         solve()

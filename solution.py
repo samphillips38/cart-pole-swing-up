@@ -1,11 +1,13 @@
 # This is the solution to the cart-pole swing-up problem
 import numpy as np
-from pandas.core.algorithms import mode
 from scipy import optimize
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 import pandas as pd
+from sympy.plotting.plot import plot
 import pycollo as pc
+import matplotlib.animation as animation
+
 
 # System global paramters
 m1 = 10
@@ -112,73 +114,59 @@ def solve():
     res = optimize.minimize(objective_func, start, method='SLSQP', constraints=[dynamic_con, boundary_start_con, boundary_end_con], bounds=bounds)
     return res
 
-def display_result(result):
-
-    u, x = split_data(result)
-    [q1, q2, q1_dot, q2_dot] = x
-
-    mass_y = -l*np.cos(q2)
-    mass_x = q1 + l*np.sin(q2)
-
-    plt.plot(mass_x, mass_y, label='Swing Position')    
-    plt.legend()
-    plt.show()
-
-def plot_result(result):
-    u, x = split_data(result)
+def plot(res):
+    u, x = split_data(res)
     [q1, q2, q1_dot, q2_dot] = x
     mass_y = -l*np.cos(q2)
     mass_x = q1 + l*np.sin(q2)
     t = np.linspace(0, T, N)
 
-    df = pd.DataFrame({
-        'Time': t,
-        'u': u,
-        'q1': q1,
-        'q2': q1,
-        'q1 Dot': q2_dot,
-        'q2 Dot': q1_dot,
-        'Mass Y':mass_y,
-        'Mass X': mass_x
-    })
+    fig = plt.figure() 
+    axis = plt.axes(xlim =(-d_max, d_max),
+                    ylim =(-l*2, l*2)) 
+    
+    line, = axis.plot([], [], lw = 2)
+    box_lines, = axis.plot([], [], lw=2)
+    arm_line, = axis.plot([], [], lw=2)
+    point, = axis.plot([], [], 'bo')
+    
+    def init(): 
+        line.set_data([], []) 
+        return line, 
+    
+    line_x, line_y = [], [] 
+    
+    # animation function 
+    def animate(i): 
+        
+        # Line Trace
+        line_x.append(mass_x[i]) 
+        line_y.append(mass_y[i]) 
+        line.set_data(line_x, line_y) 
 
+        # Box
+        box_x = [q1[i]-0.3, q1[i]-0.3, q1[i]+0.3, q1[i]+0.3, q1[i]-0.3]
+        box_y = [-0.1, 0.1, 0.1, -0.1, -0.1]
+        box_lines.set_data(box_x, box_y)
 
-    layout = go.Layout(
-        xaxis=dict(range=[-d_max, d_max], autorange=False),
-        yaxis=dict(range=[-d_max/2, d_max/2], autorange=False),
-        title="Start Title",
-        updatemenus=[dict(
-            type="buttons",
-            buttons=[dict(label="Play",
-                          method="animate",
-                          args=[None, {'frame': {'duration': 1000*T/N}}])])]
-    )
-    data = [
-        go.Scatter(x=df['Mass X'], y=df['Mass Y'], mode='lines'),
-        go.Scatter(x=df['Mass X'], y=df['Mass Y'], mode='lines')
-    ]
-    frames = []
-    for i in range(N):
-        k = N - i - 1
-        rect_xm = q1[k] - 0.5
-        rect_xM = q1[k] + 0.5
-        frames.append(go.Frame(
-            data=[
-                go.Scatter(x=[df['Mass X'][k]], y=[df['Mass Y'][k]], mode='markers'), # Point mass
-                go.Scatter(x=[rect_xm, rect_xm, rect_xM, rect_xM, rect_xm, None, q1[k], mass_x[k]], y=[-0.2, 0.2, 0.2, -0.2, -0.2, None, 0, mass_y[k]], fill="toself"), # Cart
-                go.Scatter(x=df['Mass X'], y=df['Mass Y'], mode='lines'),
-                go.Scatter(x=mass_x[:k], y=mass_y[:k], mode='markers')
-            ]
-        ))
+        # Arm
+        arm_line.set_data([q1[i], mass_x[i]], [0, mass_y[i]])
 
-    fig = go.Figure(
-        data=data,
-        layout=layout,
-        frames=frames
-    )
-    fig.show()
+        # Set point position
+        point.set_data(mass_x[i], mass_y[i])
+
+        return (line, box_lines, arm_line, point)
+    
+    # calling the animation function     
+    anim = animation.FuncAnimation(fig, animate, init_func = init, 
+                                frames = len(t), interval = 1000*T/N, blit = True) 
+    
+    # saves the animation in our desktop
+    # anim.save('output.mp4', writer = 'ffmpeg', fps = 30)
+    plt.grid()
+    plt.show()
 
 
 if __name__=='__main__':
     res = solve().x
-    plot_result(res)
+    plot2(res)
