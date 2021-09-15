@@ -19,8 +19,8 @@ g = 9.81
 d = 1.5
 d_max = 2
 u_max = 100
-T = 10
-N = 130
+T = 7
+N = 150
 
 # Dynamics
 def f(u, x):
@@ -28,7 +28,7 @@ def f(u, x):
     [_, q2, q1_dot, q2_dot] = x # [horzontal_position, angle, ...]
 
     q1_ddot = (l*m2*np.sin(q2)*q2_dot**2 + u + m2*g*np.cos(q2)*np.sin(q2)) / (m1 + m2*(1 - np.cos(q2)**2))
-    q2_ddot = (l*m2*np.cos(q2)*np.sin(q2)*q2_dot**2 + u*np.cos(q2) + (m1 + m2)*g*np.sin(q2)) / (l*m1 + l*m2*(1 - np.cos(q2)**2))
+    q2_ddot = - (l*m2*np.cos(q2)*np.sin(q2)*q2_dot**2 + u*np.cos(q2) + (m1 + m2)*g*np.sin(q2)) / (l*m1 + l*m2*(1 - np.cos(q2)**2))
 
     return np.array([q1_dot, q2_dot, q1_ddot, q2_ddot])
 
@@ -111,22 +111,24 @@ def solve():
 
     # Optimise
     res = optimize.minimize(objective_func, start, method='SLSQP', constraints=[dynamic_con, boundary_start_con, boundary_end_con], bounds=bounds)
-    return res
-
-def plot(res, cart_w=0.6, cart_h=0.2):
-    u, x = split_data(res)
+    u, x = split_data(res.x)
     [q1, q2, q1_dot, q2_dot] = x
+    return (u, q1, q2)
+
+def plot(u, q1, q2, T, N, cart_w=0.6, cart_h=0.2):
+
     mass_y = -l*np.cos(q2)
     mass_x = q1 + l*np.sin(q2)
     t = np.linspace(0, T, N)
 
     # Axis size
-    x_min = min(q1) - cart_w
-    x_max = max(q1) + cart_w
+    x_min = min(min(q1), min(mass_x)) - cart_w
+    x_max = max(max(q1), max(mass_x)) + cart_w
+    y_max = max(abs(mass_y)) + cart_h
 
     fig = plt.figure() 
     axis = plt.axes(xlim =(x_min, x_max),
-                    ylim =(-l*1.5, l*1.5)) 
+                    ylim =(-y_max, y_max)) 
     
     line, = axis.plot([], [], lw = 1, label="Trace")
     box_lines, = axis.plot([], [], lw=2, label="Cart")
@@ -144,8 +146,9 @@ def plot(res, cart_w=0.6, cart_h=0.2):
     def animate(i): 
 
         # Line Trace
-        line_x.append(mass_x[i]) 
-        line_y.append(mass_y[i]) 
+        if len(line_x) < N:
+            line_x.append(mass_x[i]) 
+            line_y.append(mass_y[i]) 
         line.set_data(line_x, line_y) 
 
         # Box
@@ -187,5 +190,5 @@ def plot(res, cart_w=0.6, cart_h=0.2):
 
 
 if __name__=='__main__':
-    res = solve().x
-    plot(res)
+    u, q1, q2 = solve()
+    plot(u, q1, q2, T, N)
