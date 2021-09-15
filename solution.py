@@ -20,7 +20,7 @@ d = 1.5
 d_max = 5
 u_max = 100
 T = 8
-N = 80
+N = 30
 
 
 # Dynamics
@@ -114,7 +114,7 @@ def solve():
     res = optimize.minimize(objective_func, start, method='SLSQP', constraints=[dynamic_con, boundary_start_con, boundary_end_con], bounds=bounds)
     return res
 
-def plot(res):
+def plot(res, cart_w=0.6, cart_h=0.2):
     u, x = split_data(res)
     [q1, q2, q1_dot, q2_dot] = x
     mass_y = -l*np.cos(q2)
@@ -125,10 +125,11 @@ def plot(res):
     axis = plt.axes(xlim =(-d_max, d_max),
                     ylim =(-l*2, l*2)) 
     
-    line, = axis.plot([], [], lw = 2)
+    line, = axis.plot([], [], lw = 1)
     box_lines, = axis.plot([], [], lw=2)
     arm_line, = axis.plot([], [], lw=2)
     point, = axis.plot([], [], 'bo')
+    force_arrow, = axis.plot([], [])
     
     def init(): 
         line.set_data([], []) 
@@ -138,15 +139,15 @@ def plot(res):
     
     # animation function 
     def animate(i): 
-        
+
         # Line Trace
         line_x.append(mass_x[i]) 
         line_y.append(mass_y[i]) 
         line.set_data(line_x, line_y) 
 
         # Box
-        box_x = [q1[i]-0.3, q1[i]-0.3, q1[i]+0.3, q1[i]+0.3, q1[i]-0.3]
-        box_y = [-0.1, 0.1, 0.1, -0.1, -0.1]
+        box_x = [q1[i]-cart_w/2, q1[i]-cart_w/2, q1[i]+cart_w/2, q1[i]+cart_w/2, q1[i]-cart_w/2]
+        box_y = [-cart_h/2, cart_h/2, cart_h/2, -cart_h/2, -cart_h/2]
         box_lines.set_data(box_x, box_y)
 
         # Arm
@@ -155,18 +156,40 @@ def plot(res):
         # Set point position
         point.set_data(mass_x[i], mass_y[i])
 
-        return (line, box_lines, arm_line, point)
+        # Force arrow
+        if u[i] > 0:
+            force_x = [
+                q1[i]-cart_w/2 - cart_h,
+                q1[i]-cart_w/2 - cart_h,
+                q1[i]-cart_w/2,
+                q1[i]-cart_w/2 - cart_h,
+                q1[i]-cart_w/2 - cart_h,
+                q1[i]-cart_w/2-u[i]*0.1
+            ]
+            force_y = [0, cart_h/2, 0, -cart_h/2, 0, 0]
+        else:
+            force_x = [
+                q1[i]+cart_w/2 + cart_h,
+                q1[i]+cart_w/2 + cart_h,
+                q1[i]+cart_w/2,
+                q1[i]+cart_w/2 + cart_h,
+                q1[i]+cart_w/2 + cart_h,
+                q1[i]+cart_w/2-u[i]*0.1
+            ]
+            force_y = [0, cart_h/2, 0, -cart_h/2, 0, 0]
+
+        force_arrow.set_data(force_x, force_y)
+
+        return (line, box_lines, arm_line, point, force_arrow)
     
     # calling the animation function     
     anim = animation.FuncAnimation(fig, animate, init_func = init, 
-                                frames = len(t), interval = 1000*T/N, blit = True) 
+                                frames = len(t), interval = 2000*T/N, blit = True, repeat_delay=2) 
     
-    # saves the animation in our desktop
-    # anim.save('output.mp4', writer = 'ffmpeg', fps = 30)
     plt.grid()
     plt.show()
 
 
 if __name__=='__main__':
     res = solve().x
-    plot2(res)
+    plot(res)
