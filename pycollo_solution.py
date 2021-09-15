@@ -1,9 +1,7 @@
 import pycollo as pc
 import sympy as sym
 import numpy as np
-from solution import plot
-import matplotlib as plt
-
+from plot import plot
 
 # System global paramters
 m1 = 1
@@ -16,7 +14,6 @@ d = 1.5
 d_max = 2
 u_max = 100
 T = 3
-N = 30
 
 # Sympy Symbols for input equations
 u = sym.symbols("u")
@@ -25,6 +22,7 @@ q1_ddot, q2_ddot = sym.symbols("q1_ddot, q2_ddot")
 
 
 def setup_problem() -> pc.OptimalControlProblem:
+    """Construct pycollo optimal control problem"""
     prob = pc.OptimalControlProblem("Cart-Pole Swing-Up")
     phase = prob.new_phase("Phase_1")
 
@@ -76,32 +74,21 @@ def setup_problem() -> pc.OptimalControlProblem:
 
     return prob
 
-
-
 def solve():
+    """Solve Optimal Control Problem"""
     prob = setup_problem()
 
     prob.initialise()
     prob.solve()
 
-    time_solution = 0.5 * prob.solution.tau[0] + 0.5
-    position_solution = prob.solution.state[0][0]
-    angle_solution = prob.solution.state[0][1]
-    control_solution = prob.solution.control[0][0]
+    t = 0.5 * prob.solution.tau[0] + 0.5
+    q1 = prob.solution.state[0][0]
+    q2 = prob.solution.state[0][1]
+    u = prob.solution.control[0][0]
 
-
-    # plt.subplot(3, 1, 1)
-    # plt.plot(time_solution, position_solution, marker="x", color="tab:blue")
-
-    # plt.subplot(3, 1, 2)
-    # plt.plot(time_solution, angle_solution, marker="x", color="tab:blue")
-
-    # plt.subplot(3, 1, 3)
-    # plt.plot(time_solution, control_solution, marker="x", color="tab:blue")
-
-    # plt.show()
-    N = len(time_solution)
-    plot(control_solution, position_solution, angle_solution, T, N)
+    return (u, q1, q2)
 
 if __name__=='__main__':
-        solve()
+        u, q1, q2 = solve()
+        N = len(u)
+        plot(u, q1, q2, T, N, l)
