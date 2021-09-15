@@ -20,7 +20,7 @@ d = 1.5
 d_max = 2
 u_max = 100
 T = 7
-N = 150
+N = 50
 
 # Dynamics
 def f(u, x):

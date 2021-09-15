@@ -1,22 +1,22 @@
 import pycollo as pc
 import sympy as sym
 import numpy as np
-from solution import plot_result
+from solution import plot
 import matplotlib as plt
 
 
 # System global paramters
-m1 = 10
-m2 = 10
-l = 1
-g = -9.81
+m1 = 1
+m2 = 3
+l = 0.5
+g = 9.81
 
 # Problem global parameters
 d = 1.5
-d_max = 5
+d_max = 2
 u_max = 100
-T = 8
-N = 80
+T = 3
+N = 30
 
 # Sympy Symbols for input equations
 u = sym.symbols("u")
@@ -40,7 +40,10 @@ def setup_problem() -> pc.OptimalControlProblem:
     phase.bounds.control_variables = {u: [-u_max, u_max]}
     phase.bounds.integral_variables = [[0, 100]]
     phase.bounds.state_variables = {
-        q1: [-d_max, d_max]
+        q1: [-d_max, d_max],
+        q2: [-10, 10],
+        q1_dot: [-10, 10],
+        q2_dot: [-10, 10]
     }
     phase.bounds.initial_state_constraints = {
         q1: 0,
@@ -61,7 +64,6 @@ def setup_problem() -> pc.OptimalControlProblem:
     phase.guess.control_variables = [[0, 0]]
     phase.guess.integral_variables = [0]
     
-
     # Dynamics equations and objective function
     q1dd_eqn = (l * m2 * sym.sin(q2) * q2_dot**2 + u + m2 * g * sym.cos(q2) * sym.sin(q2)) / (m1 + m2 * (1 - sym.cos(q2)**2))
     q2dd_eqn = - (l * m2 * sym.cos(q2) * sym.sin(q2) * q2_dot**2 + u * sym.cos(q2) + (m1 + m2) * g * sym.sin(q2)) / (l * m1 + l * m2 * (1 - sym.cos(q2)**2))
@@ -87,18 +89,19 @@ def solve():
     angle_solution = prob.solution.state[0][1]
     control_solution = prob.solution.control[0][0]
 
-    print(control_solution)
 
-    plt.subplot(3, 1, 1)
-    plt.plot(time_solution, position_solution, marker="x", color="tab:blue")
+    # plt.subplot(3, 1, 1)
+    # plt.plot(time_solution, position_solution, marker="x", color="tab:blue")
 
-    plt.subplot(3, 1, 2)
-    plt.plot(time_solution, angle_solution, marker="x", color="tab:blue")
+    # plt.subplot(3, 1, 2)
+    # plt.plot(time_solution, angle_solution, marker="x", color="tab:blue")
 
-    plt.subplot(3, 1, 3)
-    plt.plot(time_solution, control_solution, marker="x", color="tab:blue")
+    # plt.subplot(3, 1, 3)
+    # plt.plot(time_solution, control_solution, marker="x", color="tab:blue")
 
-    plt.show()
+    # plt.show()
+    N = len(time_solution)
+    plot(control_solution, position_solution, angle_solution, T, N)
 
 if __name__=='__main__':
         solve()
