@@ -157,26 +157,17 @@ def plot(res, cart_w=0.6, cart_h=0.2):
         point.set_data(mass_x[i], mass_y[i])
 
         # Force arrow
-        if u[i] > 0:
-            force_x = [
-                q1[i]-cart_w/2 - cart_h,
-                q1[i]-cart_w/2 - cart_h,
-                q1[i]-cart_w/2,
-                q1[i]-cart_w/2 - cart_h,
-                q1[i]-cart_w/2 - cart_h,
-                q1[i]-cart_w/2-u[i]*0.1
-            ]
-            force_y = [0, cart_h/2, 0, -cart_h/2, 0, 0]
-        else:
-            force_x = [
-                q1[i]+cart_w/2 + cart_h,
-                q1[i]+cart_w/2 + cart_h,
-                q1[i]+cart_w/2,
-                q1[i]+cart_w/2 + cart_h,
-                q1[i]+cart_w/2 + cart_h,
-                q1[i]+cart_w/2-u[i]*0.1
-            ]
-            force_y = [0, cart_h/2, 0, -cart_h/2, 0, 0]
+        multiplier = -u[i]*0.05
+        force_x = np.array([
+                cart_h,
+                cart_h,
+                0,
+                cart_h,
+                cart_h,
+                cart_h*5
+            ])
+        force_y = np.array([0, cart_h/2, 0, -cart_h/2, 0, 0]) * multiplier
+        force_x = multiplier * (force_x +  0.5*cart_w/abs(multiplier)) + q1[i]
 
         force_arrow.set_data(force_x, force_y)
 
