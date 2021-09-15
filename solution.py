@@ -10,18 +10,17 @@ import matplotlib.animation as animation
 
 
 # System global paramters
-m1 = 10
-m2 = 10
-l = 1
-g = -9.81
+m1 = 1
+m2 = 3
+l = 0.5
+g = 9.81
 
 # Problem global parameters
 d = 1.5
-d_max = 5
+d_max = 2
 u_max = 100
-T = 8
-N = 30
-
+T = 10
+N = 130
 
 # Dynamics
 def f(u, x):
@@ -121,15 +120,19 @@ def plot(res, cart_w=0.6, cart_h=0.2):
     mass_x = q1 + l*np.sin(q2)
     t = np.linspace(0, T, N)
 
+    # Axis size
+    x_min = min(q1) - cart_w
+    x_max = max(q1) + cart_w
+
     fig = plt.figure() 
-    axis = plt.axes(xlim =(-d_max, d_max),
-                    ylim =(-l*2, l*2)) 
+    axis = plt.axes(xlim =(x_min, x_max),
+                    ylim =(-l*1.5, l*1.5)) 
     
-    line, = axis.plot([], [], lw = 1)
-    box_lines, = axis.plot([], [], lw=2)
-    arm_line, = axis.plot([], [], lw=2)
-    point, = axis.plot([], [], 'bo')
-    force_arrow, = axis.plot([], [])
+    line, = axis.plot([], [], lw = 1, label="Trace")
+    box_lines, = axis.plot([], [], lw=2, label="Cart")
+    arm_line, = axis.plot([], [], lw=2, label="Arm")
+    point, = axis.plot([], [], 'bo', label="Mass")
+    force_arrow, = axis.plot([], [], label="Force")
     
     def init(): 
         line.set_data([], []) 
@@ -175,9 +178,11 @@ def plot(res, cart_w=0.6, cart_h=0.2):
     
     # calling the animation function     
     anim = animation.FuncAnimation(fig, animate, init_func = init, 
-                                frames = len(t), interval = 2000*T/N, blit = True, repeat_delay=2) 
+                                frames = len(t), interval = 1000*T/N, blit = True, repeat_delay=2) 
     
+    plt.gca().set_aspect('equal', adjustable='box')
     plt.grid()
+    plt.legend()
     plt.show()
 
 
