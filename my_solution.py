@@ -13,8 +13,8 @@ g = 9.81
 d = 1.5
 d_max = 2
 u_max = 100
-T = 7
-N = 50
+T = 3
+N = 150
 
 # Dynamics
 def f(u, x):
@@ -112,4 +112,4 @@ def solve():
 
 if __name__=='__main__':
     u, q1, q2 = solve()
-    plot(u, q1, q2, T, N)
+    plot(u, q1, q2, T, N, l)

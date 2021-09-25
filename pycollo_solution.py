@@ -2,6 +2,7 @@ import pycollo as pc
 import sympy as sym
 import numpy as np
 from plot import plot
+from scipy.interpolate import interp1d
 
 # System global paramters
 m1 = 1
@@ -14,6 +15,7 @@ d = 1.5
 d_max = 2
 u_max = 100
 T = 3
+N = 150
 
 # Sympy Symbols for input equations
 u = sym.symbols("u")
@@ -86,9 +88,23 @@ def solve():
     q2 = prob.solution.state[0][1]
     u = prob.solution.control[0][0]
 
-    return (u, q1, q2)
+    return u, q1, q2, t
+
+def interpolate(u, q1, q2, t):
+    """Interpolate the given data for a consistent time step used for animation."""
+    f_u = interp1d(t, u)
+    f_q1 = interp1d(t, q1)
+    f_q2 = interp1d(t, q2)
+
+    t_new = np.linspace(0, T, num=N)
+    u_new = f_u(t_new)
+    q1_new = f_q1(t_new)
+    q2_new = f_q2(t_new)
+
+    return u_new, q1_new, q2_new, t_new
+
 
 if __name__=='__main__':
-        u, q1, q2 = solve()
-        N = len(u)
-        plot(u, q1, q2, T, N, l)
+        u, q1, q2, t = solve()
+        u_new, q1_new, q2_new, t_new = interpolate(u, q1, q2, t)
+        plot(u_new, q1_new, q2_new, T, N, l)
