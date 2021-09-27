@@ -2,7 +2,8 @@ import pycollo as pc
 import sympy as sym
 import numpy as np
 from plot import plot
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, splprep, splev
+import matplotlib.pyplot as plt
 
 # System global paramters
 m1 = 1
@@ -15,7 +16,7 @@ d = 1.5
 d_max = 2
 u_max = 100
 T = 3
-N = 150
+N = 200
 
 # Sympy Symbols for input equations
 u = sym.symbols("u")
@@ -92,14 +93,14 @@ def solve():
 
 def interpolate(u, q1, q2, t):
     """Interpolate the given data for a consistent time step used for animation."""
-    f_u = interp1d(t, u)
-    f_q1 = interp1d(t, q1)
-    f_q2 = interp1d(t, q2)
 
-    t_new = np.linspace(0, T, num=N)
-    u_new = f_u(t_new)
-    q1_new = f_q1(t_new)
-    q2_new = f_q2(t_new)
+    # New evenly spaced time array
+    t_new = np.linspace(t[0], t[-1], num=N)
+    u_new = interp1d(t, u, kind='cubic')(t_new)
+
+    # Approximate spline and interpolate parametric curve
+    tck, = splprep([q1, q2], s=0, u=t)
+    q1_new, q2_new = splev(t_new, tck)
 
     return u_new, q1_new, q2_new, t_new
 
