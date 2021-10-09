@@ -8,14 +8,14 @@ import matplotlib.pyplot as plt
 # System global paramters
 m1 = 1
 m2 = 3
-l = 0.5
+l = 1
 g = 9.81
 
 # Problem global parameters
 d = 1.5
 d_max = 2
-u_max = 100
-T = 3
+u_max = 60
+T = 10
 N = 200
 
 # Sympy Symbols for input equations
@@ -39,7 +39,7 @@ def setup_problem() -> pc.OptimalControlProblem:
     phase.bounds.initial_time = 0
     phase.bounds.final_time = T
     phase.bounds.control_variables = {u: [-u_max, u_max]}
-    phase.bounds.integral_variables = [[0, 100]]
+    phase.bounds.integral_variables = [[0, 600]]
     phase.bounds.state_variables = {
         q1: [-d_max, d_max],
         q2: [-10, 10],
@@ -99,11 +99,13 @@ def interpolate(u, q1, q2, t):
     u_new = interp1d(t, u, kind='cubic')(t_new)
 
     # Approximate spline and interpolate parametric curve
-    tck, = splprep([q1, q2], s=0, u=t)
-    q1_new, q2_new = splev(t_new, tck)
+    # tck, _ = splprep([q1, q2], s=0, u=t)
+    # q1_new, q2_new = splev(t_new, tck)
+
+    q1_new = interp1d(t, q1, kind='cubic')(t_new)
+    q2_new = interp1d(t, q2, kind='cubic')(t_new)
 
     return u_new, q1_new, q2_new, t_new
-
 
 if __name__=='__main__':
         u, q1, q2, t = solve()
