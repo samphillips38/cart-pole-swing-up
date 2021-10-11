@@ -6,17 +6,16 @@ from plot import plot
 # System global paramters
 m1 = 1
 m2 = 3
-l = 0.5
+l = 1
 g = 9.81
 
 # Problem global parameters
 d = 1.5
 d_max = 2
-u_max = 100
-T = 3
-N = 150
+u_max = 60
+T = 3.5
+N = 100
 
-# Dynamics
 def f(u, x):
     """Calculate the dynamics given the state, x and the control, u"""
     [_, q2, q1_dot, q2_dot] = x # [horzontal_position, angle, ...]
@@ -27,7 +26,7 @@ def f(u, x):
     return np.array([q1_dot, q2_dot, q1_ddot, q2_ddot])
 
 def split_data(data) -> np.array:
-    """Split supplied single-dimensional data into components"""
+    """Split supplied 1-dimensional data into components"""
     u = data[:N]
 
     q1 = data[N:2*N]
@@ -108,6 +107,9 @@ def solve():
     res = optimize.minimize(objective_func, start, method='SLSQP', constraints=[dynamic_con, boundary_start_con, boundary_end_con], bounds=bounds)
     u, x = split_data(res.x)
     [q1, q2, q1_dot, q2_dot] = x
+
+    print("Solution Optimised. Final Objective evaluation: ", objective_func(res.x))
+    
     return (u, q1, q2)
 
 if __name__=='__main__':

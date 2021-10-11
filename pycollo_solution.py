@@ -2,8 +2,7 @@ import pycollo as pc
 import sympy as sym
 import numpy as np
 from plot import plot
-from scipy.interpolate import interp1d, splprep, splev
-import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 # System global paramters
 m1 = 1
@@ -15,8 +14,8 @@ g = 9.81
 d = 1.5
 d_max = 2
 u_max = 60
-T = 10
-N = 200
+T = 3.5
+N = 250
 
 # Sympy Symbols for input equations
 u = sym.symbols("u")
@@ -96,12 +95,9 @@ def interpolate(u, q1, q2, t):
 
     # New evenly spaced time array
     t_new = np.linspace(t[0], t[-1], num=N)
+
+    # Interpolate Data
     u_new = interp1d(t, u, kind='cubic')(t_new)
-
-    # Approximate spline and interpolate parametric curve
-    # tck, _ = splprep([q1, q2], s=0, u=t)
-    # q1_new, q2_new = splev(t_new, tck)
-
     q1_new = interp1d(t, q1, kind='cubic')(t_new)
     q2_new = interp1d(t, q2, kind='cubic')(t_new)
 
