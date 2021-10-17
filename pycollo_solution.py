@@ -14,7 +14,7 @@ g = 9.81
 d = 1.5
 d_max = 2
 u_max = 60
-T = 3.5
+T = 2.5
 N = 250
 
 # Sympy Symbols for input equations
@@ -63,7 +63,7 @@ def setup_problem() -> pc.OptimalControlProblem:
     phase.guess.state_variables = [[0, d], [0, np.pi], [0, 0], [0, 0]]
     phase.guess.control_variables = [[0, 0]]
     phase.guess.integral_variables = [0]
-    
+
     # Dynamics equations and objective function
     q1dd_eqn = (l * m2 * sym.sin(q2) * q2_dot**2 + u + m2 * g * sym.cos(q2) * sym.sin(q2)) / (m1 + m2 * (1 - sym.cos(q2)**2))
     q2dd_eqn = - (l * m2 * sym.cos(q2) * sym.sin(q2) * q2_dot**2 + u * sym.cos(q2) + (m1 + m2) * g * sym.sin(q2)) / (l * m1 + l * m2 * (1 - sym.cos(q2)**2))

@@ -13,8 +13,8 @@ g = 9.81
 d = 1.5
 d_max = 2
 u_max = 60
-T = 3.5
-N = 100
+T = 2.5
+N = 80
 
 def f(u, x):
     """Calculate the dynamics given the state, x and the control, u"""
@@ -40,10 +40,7 @@ def objective_func(data):
     """Calculate the value of the objective function with given data"""
     u, _ = split_data(data)
     h_k = T/N
-    s = 0
-    for k in range(N-1):
-        s += u[k]**2 + u[k+1]**2
-    return 0.5*h_k*s
+    return h_k*sum(u**2) # This can be done due to constant time step
 
 def collocation_constraint(data):
     """Constructs a matrix which should be constrained to be equal to 0. This is the dynamics constraint"""
@@ -57,7 +54,7 @@ def collocation_constraint(data):
     u_kplus1 = np.delete(u, 0)
 
     output = 0.5 * h_k * (f(u_kplus1, x_kplus1) + f(u_k, x_k)) - x_kplus1 + x_k
-    return output.flatten() 
+    return output.flatten()
 
 def path_limit(sign=1):
     """Construct the upper limit to the path constraint.
@@ -93,7 +90,7 @@ def initial_guess() -> np.ndarray:
 def solve():
     """Solve the trajectory optimisation problem using scipy."""
     # Define bounds
-    bounds = optimize.Bounds(path_limit(sign=-1), path_limit())
+    bounds = optimize.Bounds(path_limit(sign=-1), path_limit()) 
 
     # Define Constraints
     dynamic_con = optimize.NonlinearConstraint(collocation_constraint, np.zeros(4*(N-1)), np.zeros(4*(N-1)))
@@ -109,7 +106,7 @@ def solve():
     [q1, q2, q1_dot, q2_dot] = x
 
     print("Solution Optimised. Final Objective evaluation: ", objective_func(res.x))
-    
+
     return (u, q1, q2)
 
 if __name__=='__main__':
