@@ -15,7 +15,7 @@ d = 1.5
 d_max = 2
 u_max = 60
 T = 2.5
-N = 5
+N = 40
 
 def f(u, x):
     """Calculate the dynamics given the state, x and the control, u"""
@@ -76,7 +76,7 @@ def constraint_jac(data):
     output = np.zeros((4*(N-1)+8, 5*N))
     hk = T/N
 
-    for i in range(4*(N - 1)): # For each row in Dynamics Jacobian
+    for i in range(4*(N - 1)): # For each row in Dynamics section
 
         # Determine which section of the Jacobian we are in
         if i < N-1:
@@ -84,13 +84,11 @@ def constraint_jac(data):
 
             # Diff wrt u is zero
             # Diff wrt q1
-            output[i, k] = 1
-            output[i, k+1] = -1
-
+            output[i, k+N] = 1
+            output[i, k+N+1] = -1
             # Diff wrt q2 is zero
             # Diff wrt q1_dot
-            output[i, k:k+2] = hk/2
-
+            output[i, k+3*N:k+3*N+2] = hk/2
             # Diff wrt q2_dot is zero
 
         elif i < 2*(N - 1):
@@ -99,55 +97,54 @@ def constraint_jac(data):
             # Diff wrt u is zero
             # Diff wrt q1 is zero
             # Diff wrt q2
-            output[i, k] = 1
-            output[i, k+1] = -1
+            output[i, k+2*N] = 1
+            output[i, k+2*N+1] = -1
             # Diff wrt q1_dot is zero
             # Diff wrt q2_dot
-            output[i, k:k+2] = hk/2
+            output[i, k+4*N:k+4*N+2] = hk/2
 
         elif i < 3*(N - 1):
             k = i - 2*(N - 1)
 
             # Diff wrt u
-            output[i, k] = hk / 2*(m1 + m2*(1 - np.cos(q2[k])**2))
-
+            output[i, k] = hk / (2*(m1 + m2*(1 - np.cos(q2[k])**2)))
             # Diff wrt q1 is zero
             # Diff wrt q2 - SEE GOOGLE
-            output[i, k] = hk*m2*(l*(4*m1 - m2)*np.cos(q2[k])*q2_dot[k]**2 + l*m2*np.cos(3*q2[k])*q2_dot[k]**2 + 2*g*(m2+2*m1)*np.cos(2*q2[k]) - 2*g*m2 - 4*u[k]*np.sin(2*q2[k]))
-            output[i, k] /= 2*(2*m1 + m2*(1 - np.cos(2*q2[k])))**2
+            output[i, k+2*N] = hk*m2*(l*(4*m1 - m2)*np.cos(q2[k])*q2_dot[k]**2 + l*m2*np.cos(3*q2[k])*q2_dot[k]**2 + 2*g*(m2+2*m1)*np.cos(2*q2[k]) - 2*g*m2 - 4*u[k]*np.sin(2*q2[k]))
+            output[i, k+2*N] /= (2*(2*m1 + m2*(1 - np.cos(2*q2[k])))**2)
 
-            output[i, k+1] = hk*m2*(l*(4*m1 - m2)*np.cos(q2[k+1])*q2_dot[k+1]**2 + l*m2*np.cos(3*q2[k+1])*q2_dot[k+1]**2 + 2*g*(m2+2*m1)*np.cos(2*q2[k+1]) - 2*g*m2 - 4*u[k+1]*np.sin(2*q2[k+1]))
-            output[i, k+1] /= 2*(2*m1 + m2*(1 - np.cos(2*q2[k+1])))**2
+            output[i, k+2*N+1] = hk*m2*(l*(4*m1 - m2)*np.cos(q2[k+1])*q2_dot[k+1]**2 + l*m2*np.cos(3*q2[k+1])*q2_dot[k+1]**2 + 2*g*(m2+2*m1)*np.cos(2*q2[k+1]) - 2*g*m2 - 4*u[k+1]*np.sin(2*q2[k+1]))
+            output[i, k+2*N+1] /= (2*(2*m1 + m2*(1 - np.cos(2*q2[k+1])))**2)
 
             # Diff wrt q1_dot
-            output[i, k] = 1
-            output[i, k+1] = -1
+            output[i, k+3*N] = 1
+            output[i, k+3*N+1] = -1
 
             # Diff wrt q2_dot
-            output[i, k] = hk*l*m2*np.sin(q2[k])*q2_dot[k] / (m1 + m2*(1 - np.cos(q2[k])**2))
-            output[i, k+1] = hk*l*m2*np.sin(q2[k+1])*q2_dot[k+1] / (m1 + m2*(1 - np.cos(q2[k+1])**2))
+            output[i, k+4*N] = hk*l*m2*np.sin(q2[k])*q2_dot[k] / (m1 + m2*(1 - np.cos(q2[k])**2))
+            output[i, k+4*N+1] = hk*l*m2*np.sin(q2[k+1])*q2_dot[k+1] / (m1 + m2*(1 - np.cos(q2[k+1])**2))
 
         elif i < 4*(N - 1):
             k = i - 3*(N - 1)
 
             # Diff wrt u
-            output[i, k] = hk*np.cos(q2[k]) / 2*(l*m1 + l*m2*(1 - np.cos(q2[k])**2))
+            output[i, k] = hk*np.cos(q2[k]) / (2*(l*m1 + l*m2*(1 - np.cos(q2[k])**2)))
             # Diff wrt q1 is zero
             # Diff wrt q2 - SEE GOOGLE
-            output[i, k] = u[k]*np.sin(q2[k])*(m2*(np.cos(2*q2[k]) + 3) + 2*m1)
-            output[i, k] -= g*(m1 + m2)*np.cos(q2[k])*(m2*(np.cos(2*q2[k]) - 1) + 2*m1)
-            output[i, k] -= 2*l*m2*(m2*(np.cos(2*q2[k]) - 1) + 2*m1*np.cos(2*q2[k]))
-            output[i, k] /= l*(m2*(np.cos(2*q2[k]) - 1) - 2*m1)**2
+            output[i, k+2*N] = u[k]*np.sin(q2[k])*(m2*(np.cos(2*q2[k]) + 3) + 2*m1)
+            output[i, k+2*N] -= g*(m1 + m2)*np.cos(q2[k])*(m2*(np.cos(2*q2[k]) - 1) + 2*m1)
+            output[i, k+2*N] -= 2*l*m2*(m2*(np.cos(2*q2[k]) - 1) + 2*m1*np.cos(2*q2[k]))
+            output[i, k+2*N] /= (l*(m2*(np.cos(2*q2[k]) - 1) - 2*m1)**2)
 
-            output[i, k+1] = u[k+1]*np.sin(q2[k+1])*(m2*(np.cos(2*q2[k+1]) + 3) + 2*m1)
-            output[i, k+1] -= g*(m1 + m2)*np.cos(q2[k+1])*(m2*(np.cos(2*q2[k+1]) - 1) + 2*m1)
-            output[i, k+1] -= 2*l*m2*(m2*(np.cos(2*q2[k+1]) - 1) + 2*m1*np.cos(2*q2[k+1]))
-            output[i, k+1] /= l*(m2*(np.cos(2*q2[k+1]) - 1) - 2*m1)**2
+            output[i, k+2*N+1] = u[k+1]*np.sin(q2[k+1])*(m2*(np.cos(2*q2[k+1]) + 3) + 2*m1)
+            output[i, k+2*N+1] -= g*(m1 + m2)*np.cos(q2[k+1])*(m2*(np.cos(2*q2[k+1]) - 1) + 2*m1)
+            output[i, k+2*N+1] -= 2*l*m2*(m2*(np.cos(2*q2[k+1]) - 1) + 2*m1*np.cos(2*q2[k+1]))
+            output[i, k+2*N+1] /= (l*(m2*(np.cos(2*q2[k+1]) - 1) - 2*m1)**2)
 
             # Diff wrt q1_dot is zero
             # Diff wrt q2_dot
-            output[i, k] = - hk*l*m2*np.cos(q2[k])*np.sin(q2[k])*q2_dot[k] / (l*m1 + l*m2*(1 - np.cos(q2[k])**2))
-            output[i, k+1] = - hk*l*m2*np.cos(q2[k+1])*np.sin(q2[k+1])*q2_dot[k+1] / (l*m1 + l*m2*(1 - np.cos(q2[k+1])**2))
+            output[i, k+4*N] = - hk*l*m2*np.cos(q2[k])*np.sin(q2[k])*q2_dot[k] / (l*m1 + l*m2*(1 - np.cos(q2[k])**2))
+            output[i, k+4*N+1] = - hk*l*m2*np.cos(q2[k+1])*np.sin(q2[k+1])*q2_dot[k+1] / (l*m1 + l*m2*(1 - np.cos(q2[k+1])**2))
 
     # Boundary Constraints
     output[4*(N-1), N] = 1 # Diff of q1, 0
@@ -160,7 +157,7 @@ def constraint_jac(data):
     output[4*(N-1)+6, 4*N-1] = 1 # Diff of q1 dot, 0
     output[4*(N-1)+7, 5*N-1] = 1 # Diff of q2 dot, 0
 
-    print(output[-2, :])
+    print(output[N, :])
 
     return output
 
@@ -189,7 +186,6 @@ def solve():
 
     res = minimize_ipopt(objective_func, jac=objective_gradient, x0=initial, bounds=bounds,
                      constraints=cons)
-
 
     u, [q1, q2, q1_dot, q2_dot] = split_data(res.x)
 
