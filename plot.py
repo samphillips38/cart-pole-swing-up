@@ -60,7 +60,7 @@ def plot(u, q1, q2, T, N, l, cart_w=0.6, cart_h=0.2):
                 cart_h*5
             ])
         force_y = np.array([0, cart_h/2, 0, -cart_h/2, 0, 0]) * multiplier
-        force_x = multiplier * (force_x +  0.5*cart_w/abs(multiplier)) + q1[i]
+        force_x = multiplier * force_x +  0.5*cart_w * np.sign(multiplier) + q1[i]
 
         force_arrow.set_data(force_x, force_y)
 
