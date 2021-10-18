@@ -40,7 +40,8 @@ def objective_func(data):
     """Calculate the value of the objective function with given data"""
     u, _ = split_data(data)
     h_k = T/N
-    return h_k*sum(u**2) # This can be done due to constant time step
+
+    return h_k*(sum(u**2) - 0.5*(u[0]**2 + u[-1]**2)) # This can be done due to constant time step
 
 def collocation_constraint(data):
     """Constructs a matrix which should be constrained to be equal to 0. This is the dynamics constraint"""
