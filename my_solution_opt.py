@@ -1,10 +1,10 @@
 # This is the solution to the cart-pole swing-up problem
-from math import sin
 import numpy as np
+from scipy import sparse
 from cyipopt import minimize_ipopt
 import cyipopt
+from scipy.sparse import dia
 from plot import plot
-
 
 # System global paramters
 m1 = 1
@@ -174,7 +174,7 @@ class cart_prob:
         output = np.zeros((5*N, 5*N))
         h_k = T/N
 
-        for i in range(5*N): # This is a diagonal matrix, so only 5*N iterations needed
+        for i in range(5*N): # Initially iterate through the diagonal
 
             # Objective function contribution
             if i == 0 or i == N-1:
@@ -233,6 +233,12 @@ class cart_prob:
             else:
                 con_val = 0
 
+            # Add non diagonal constraint elements
+            # for i in range(N):
+            #     con_val = 
+
+
+
             output[i, i] = obj_factor*obj_val + con_val
 
         return output
@@ -259,26 +265,6 @@ def path_limit(sign=1):
 
 def solve():
     """Solve the trajectory optimisation problem using cyipopt."""
-    
-    # # Constraints
-    # cons = [
-    #     {'type': 'eq', 'fun': constraints, 'jac': constraint_jac}
-    # ]
-
-    # # Initial 
-    # initial = initial_guess()
-
-    # # # Bounds
-    # bounds = variable_bounds()
-
-    # res = minimize_ipopt(objective_func, jac=objective_gradient, x0=initial, bounds=bounds,
-    #                  constraints=cons)
-
-    # u, [q1, q2, q1_dot, q2_dot] = split_data(res.x)
-
-    # print("Solution Optimised. Final Objective evaluation: ", objective_func(res.x))
-    # print(res.message)
-    # return (u, q1, q2)
 
     lb = path_limit(-1)
     ub = path_limit()
@@ -306,7 +292,6 @@ def solve():
     return u, q1, q2
 
 
-
 def initial_guess() -> np.ndarray:
     """Linearly interpolate between start and end states for initial guess"""
     output = np.zeros((5, N))
@@ -319,3 +304,7 @@ def initial_guess() -> np.ndarray:
 if __name__=='__main__':
     u, q1, q2 = solve()
     plot(u, q1, q2, T, N, l)
+
+    a = np.array([[1, 2, 3]])
+    b = sparse.dia_matrix((a, np.array([0])), (3, 3))
+    print(b.toarray())
